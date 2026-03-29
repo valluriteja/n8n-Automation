@@ -1,0 +1,138 @@
+{
+  "name": "AI Student Query Automation",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-300, -150]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "query",
+              "value": "Show students with NLP marks above 80",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "input",
+      "name": "Query Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [-100, -150]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        "authentication": "none",
+        "sendBody": true,
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"Extract subject and minimum marks from the query.\\n\\nReturn ONLY JSON in this format:\\n{\\\"subject\\\":\\\"NLP\\\",\\\"min_marks\\\":80}\\n\\nQuery: {{$json.query}}\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {
+          "headers": {
+            "Content-Type": "application/json",
+            "x-goog-api-key": "YOUR_API_KEY_HERE"
+          }
+        }
+      },
+      "id": "gemini",
+      "name": "Gemini Parser",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [150, -150]
+    },
+    {
+      "parameters": {
+        "jsCode": "let text = $json.candidates[0].content.parts[0].text;\n\ntext = text.replace(/```json/g, '').replace(/```/g, '').trim();\n\nlet parsed;\ntry {\n  parsed = JSON.parse(text);\n} catch (e) {\n  throw new Error(\"Invalid JSON from Gemini: \" + text);\n}\n\nreturn [{ json: parsed }];"
+      },
+      "id": "cleaner",
+      "name": "JSON Cleaner",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, -150]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "sheetName": "Sheet1"
+      },
+      "id": "sheets",
+      "name": "Fetch Student Data",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [650, -150],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "RECONNECT",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{$json[\"Subject\"]}}",
+              "rightValue": "={{$json[\"subject\"]}}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "leftValue": "={{$json[\"Marks\"]}}",
+              "rightValue": "={{$json[\"min_marks\"]}}",
+              "operator": {
+                "type": "number",
+                "operation": "larger"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "filter",
+      "name": "Filter Students",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [900, -150]
+    },
+    {
+      "parameters": {
+        "jsCode": "let result = items.map(item => `${item.json.Name} scored ${item.json.Marks}`);\n\nreturn [{\n  json: {\n    response: result.length\n      ? \"Top students: \" + result.join(\", \")\n      : \"No students found matching criteria\"\n  }\n}];"
+      },
+      "id": "output",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1150, -150]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{ "node": "Query Input", "type": "main", "index": 0 }]]
+    },
+    "Query Input": {
+      "main": [[{ "node": "Gemini Parser", "type": "main", "index": 0 }]]
+    },
+    "Gemini Parser": {
+      "main": [[{ "node": "JSON Cleaner", "type": "main", "index": 0 }]]
+    },
+    "JSON Cleaner": {
+      "main": [[{ "node": "Fetch Student Data", "type": "main", "index": 0 }]]
+    },
+    "Fetch Student Data": {
+      "main": [[{ "node": "Filter Students", "type": "main", "index": 0 }]]
+    },
+    "Filter Students": {
+      "main": [[{ "node": "Format Response", "type": "main", "index": 0 }]]
+    }
+  }
+}
