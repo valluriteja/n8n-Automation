@@ -1,20 +1,25 @@
 #n8n-Automation: AI Query Automation using n8n + Gemini + Google Sheets
 
+
 ## Overview
 This project automates natural language queries and filters data from Google Sheets.
 
+
 ## Workflow
 User Query → Gemini API → JSON → Google Sheets → Filter → Output
+
 
 ## Features
 - Natural language processing using Gemini
 - Automated data retrieval from Google Sheets
 - Conditional filtering using IF node
 
+
 ## Tech Stack
 - n8n
 - Google Gemini API
 - Google Sheets API
+
 
 ## How to Run
 1. Import workflow.json into n8n
