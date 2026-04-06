@@ -9,6 +9,7 @@
       "typeVersion": 1,
       "position": [-300, -150]
     },
+    
     {
       "parameters": {
         "assignments": {
@@ -21,12 +22,14 @@
           ]
         }
       },
+      
       "id": "input",
       "name": "Query Input",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3,
       "position": [-100, -150]
     },
+    
     {
       "parameters": {
         "method": "POST",
@@ -41,12 +44,14 @@
           }
         }
       },
+      
       "id": "gemini",
       "name": "Gemini Parser",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [150, -150]
     },
+    
     {
       "parameters": {
         "jsCode": "let text = $json.candidates[0].content.parts[0].text;\n\ntext = text.replace(/```json/g, '').replace(/```/g, '').trim();\n\nlet parsed;\ntry {\n  parsed = JSON.parse(text);\n} catch (e) {\n  throw new Error(\"Invalid JSON from Gemini: \" + text);\n}\n\nreturn [{ json: parsed }];"
@@ -57,6 +62,7 @@
       "typeVersion": 2,
       "position": [400, -150]
     },
+    
     {
       "parameters": {
         "operation": "read",
@@ -74,6 +80,7 @@
         }
       }
     },
+    
     {
       "parameters": {
         "conditions": {
